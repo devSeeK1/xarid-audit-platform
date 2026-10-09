@@ -1,0 +1,3 @@
+# Ixtiyoriy: Spark bosqichi uchun (Java 17+ kerak)
+-r requirements.txt
+pyspark==4.2.0

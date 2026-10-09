@@ -1,0 +1,47 @@
+# Xarid Audit Platform — asosiy sozlamalar
+# Barcha chegaralar SINTETIK qiymatlar. Real ishlatishda amaldagi qonunchilikka moslab sozlanadi.
+
+project: xarid-audit-platform
+seed: 42
+
+# Sintetik ma'lumotlar hajmi (scale = 1.0 da)
+scale:
+  buyers: 400
+  suppliers: 25000
+  contracts: 600000
+  payments_per_contract_mean: 2.5   # ~1.5 mln to'lov yozuvi
+
+period:
+  start: "2024-01-01"
+  end: "2025-12-31"
+
+# Audit qoidalari parametrlari
+thresholds:
+  direct_purchase_limit: 25000000     # to'g'ridan-to'g'ri xarid chegarasi, so'm
+  split_window_days: 30               # bo'lib xarid qilish oynasi
+  split_min_count: 3                  # oynadagi minimal shartnomalar soni
+  split_min_share: 0.7                # chegaraga "yaqin" hisoblanadigan ulush (70%)
+  price_inflation_ratio: 1.8          # bozor medianasidan necha baravar qimmat
+  new_company_days: 90                # "yangi korxona" hisoblanadigan muddat
+  new_company_min_amount: 500000000   # yangi korxona uchun katta shartnoma chegarasi
+  concentration_share: 0.40           # bitta yetkazuvchining buyurtmachi xarajatidagi ulushi
+  concentration_min_contracts: 20     # buyurtmachining yillik minimal shartnomalari
+  overpayment_tolerance: 0.01         # to'lovning shartnomadan oshishiga ruxsat (1%)
+
+# Qoidalar og'irligi (xavf balli)
+rule_weights:
+  R01: 4
+  R02: 5
+  R03: 3
+  R04: 3
+  R05: 4
+  R06: 2
+  R07: 4
+  R08: 5
+
+api:
+  host: 127.0.0.1
+  port: 8765
+  page_size: 50000
+  timeout_seconds: 60
+  max_retries: 6

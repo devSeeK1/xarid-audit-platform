@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Xarid Audit Hisoboti</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: auditor's working paper — summary strip first, then evidence sections in one readable column; wide tables scroll in their own frames. */
+:root {
+  --paper: #f4f7f6; --surface: #ffffff; --ink: #14222a; --ink-2: #4a5a63; --muted: #6f8088;
+  --line: #dbe3e1; --line-strong: #b9c6c3; --accent: #0e6b70; --accent-strong: #08494d; --accent-wash: rgba(14,107,112,.10);
+  --notice-bg: #fff3d1; --notice-ink: #5a4300;
+  --sev-crit: #a8231b; --sev-high: #b9450d; --sev-mid: #8a5d00; --sev-low: #3f7547;
+  --sev-crit-bg: #fbe4e2; --sev-high-bg: #fde9dc; --sev-mid-bg: #f8edd3; --sev-low-bg: #e3f0e4;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #0e161a; --surface: #142026; --ink: #e4edef; --ink-2: #a6b6bc; --muted: #7f9198;
+  --line: #24343b; --line-strong: #364a52; --accent: #4fb2b4; --accent-strong: #8fd3d4; --accent-wash: rgba(79,178,180,.14);
+  --notice-bg: #3a2f10; --notice-ink: #f3dc9b;
+  --sev-crit: #ff8a80; --sev-high: #ffab76; --sev-mid: #e9c46a; --sev-low: #8fcf97;
+  --sev-crit-bg: #3d1a18; --sev-high-bg: #3b2416; --sev-mid-bg: #352b12; --sev-low-bg: #1b2f1e;
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --paper: #0e161a; --surface: #142026; --ink: #e4edef; --ink-2: #a6b6bc; --muted: #7f9198;
+  --line: #24343b; --line-strong: #364a52; --accent: #4fb2b4; --accent-strong: #8fd3d4; --accent-wash: rgba(79,178,180,.14);
+  --notice-bg: #3a2f10; --notice-ink: #f3dc9b;
+  --sev-crit: #ff8a80; --sev-high: #ffab76; --sev-mid: #e9c46a; --sev-low: #8fcf97;
+  --sev-crit-bg: #3d1a18; --sev-high-bg: #3b2416; --sev-mid-bg: #352b12; --sev-low-bg: #1b2f1e;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.55 var(--f-body); }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; padding-block: 28px 64px; display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -.005em; }
+h1 { font-size: clamp(28px, 4.2vw, 40px); font-weight: 700; line-height: 1.1; }
+h2 { font-size: 22px; font-weight: 600; }
+h3 { font-size: 16px; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font: 500 12px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.mono { font-family: var(--f-mono); font-size: .92em; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+section { display: grid; gap: 16px; min-width: 0; }
+.section-head { display: grid; gap: 6px; border-top: 1px solid var(--line-strong); padding-top: 14px; }
+.section-head p { color: var(--ink-2); }
+
+header.top { display: grid; gap: 14px; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 20px; color: var(--ink-2); font-size: 13px; }
+.meta b { font-weight: 500; color: var(--ink); }
+.notice { background: var(--notice-bg); color: var(--notice-ink); border-radius: 6px; padding: 10px 14px; font-size: 14px; }
+
+.summary { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 2fr); gap: 16px; align-items: stretch; }
+.hero { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 20px; display: grid; gap: 8px; align-content: start; }
+.hero .value { font: 600 clamp(36px, 5vw, 52px)/1.05 var(--f-body); color: var(--ink); }
+.hero .value small { font-size: .42em; font-weight: 500; color: var(--ink-2); }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.tile { background: var(--surface); padding: 16px 18px; display: grid; gap: 4px; }
+.tile .label { font-size: 13px; color: var(--ink-2); }
+.tile .value { font-size: 26px; font-weight: 600; line-height: 1.15; }
+.tile .sub { font-size: 13px; color: var(--muted); }
+
+.panel h3 { margin-bottom: 10px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; min-width: 0; }
+.chart { width: 100%; height: auto; display: block; overflow: visible; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .axis { stroke: var(--line-strong); stroke-width: 1; }
+.chart .bar { fill: var(--accent); transition: fill .15s; }
+.chart .hit { fill: transparent; }
+.chart .mark:hover .bar { fill: var(--accent-strong); }
+.chart .lab { fill: var(--ink); font: 13px var(--f-body); }
+.chart .val { fill: var(--ink-2); font: 12px var(--f-mono); }
+.chart .tick { fill: var(--muted); font: 11px var(--f-mono); }
+.chart .area { fill: var(--accent-wash); }
+.chart .line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .dot, .chart .xdot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.chart .xhair { stroke: var(--line-strong); stroke-width: 1; }
+.chart .hitarea { fill: transparent; cursor: crosshair; }
+.chart-wrap { position: relative; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--paper); font: 12px var(--f-mono); padding: 5px 8px; border-radius: 4px; white-space: nowrap; transform: translate(-50%, -130%); }
+.grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+
+.table-frame { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 12px/1.3 var(--f-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); background: var(--surface); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td .desc { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+
+.sev { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; padding: 2px 8px 2px 6px; border-radius: 999px; white-space: nowrap; }
+.sev::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.sev-crit { color: var(--sev-crit); background: var(--sev-crit-bg); }
+.sev-high { color: var(--sev-high); background: var(--sev-high-bg); }
+.sev-mid { color: var(--sev-mid); background: var(--sev-mid-bg); }
+.sev-low { color: var(--sev-low); background: var(--sev-low-bg); }
+.chip { display: inline-block; font: 500 11px/1.6 var(--f-mono); padding: 0 6px; border: 1px solid var(--line-strong); border-radius: 4px; color: var(--ink-2); margin: 1px 2px 1px 0; }
+.score { font: 600 15px var(--f-mono); }
+
+.samples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.sample { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.sample-head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; justify-content: space-between; }
+.finding { border-top: 1px solid var(--line); padding-top: 8px; display: grid; gap: 4px; font-size: 13px; min-width: 0; }
+.finding .ids { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: space-between; }
+.finding dl { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 14px; color: var(--ink-2); }
+.finding dt { display: inline; color: var(--muted); }
+.finding dd { display: inline; margin: 0 0 0 4px; color: var(--ink); overflow-wrap: anywhere; }
+.empty { color: var(--muted); font-size: 13px; }
+
+.ok { color: var(--sev-low); font-weight: 600; }
+.bad { color: var(--sev-crit); font-weight: 600; }
+footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; display: grid; gap: 6px; }
+
+@media (max-width: 760px) {
+  .summary, .grid-2, .samples { grid-template-columns: minmax(0, 1fr); }
+  .tiles { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+
+<header class="top">
+  <span class="eyebrow">Davlat xaridlari audit-analitika platformasi</span>
+  <h1>Xarid Audit Hisoboti</h1>
+  <div class="meta">
+    <span>Davr: <b class="num">01.01.2024 – 31.12.2025</b></span>
+    <span>Run ID: <b class="mono">20261009T112731-bfa500</b></span>
+    <span>Rejim: <b>full</b></span>
+    <span>Ishlov vaqti: <b class="num">35,3 s</b></span>
+    <span>Shakllantirildi: <b class="num">09.10.2026 11:28</b></span>
+  </div>
+  <p class="notice">Namoyish uchun <b>sintetik ma'lumotlar</b>. Barcha tashkilot nomlari, STIR va PINFL raqamlari tasodifiy yaratilgan va hech qanday real shaxs yoki tashkilotga tegishli emas.</p>
+</header>
+
+<section aria-label="Qisqa xulosa">
+  <div class="summary">
+    <div class="hero">
+      <span class="eyebrow">Xavf ostidagi summa</span>
+      <div class="value num">2 020,1 <small>mlrd so&#39;m</small></div>
+      <p class="muted">8 ta audit qoidasi topgan barcha holatlar bo'yicha shubhali summaning yig'indisi. Har bir topilma auditor tomonidan alohida tekshirilishi kerak.</p>
+    </div>
+    <div class="tiles">
+      
+      <div class="tile"><span class="label">Shartnomalar</span><span class="value num">597 194</span><span class="sub">31 795,7 mlrd so&#39;m</span></div>
+      
+      <div class="tile"><span class="label">To&#39;lovlar</span><span class="value num">1 491 018</span><span class="sub">29 404,0 mlrd so&#39;m</span></div>
+      
+      <div class="tile"><span class="label">Qayta ishlangan qatorlar</span><span class="value num">2 141 109</span><span class="sub">karantinda 15 178</span></div>
+      
+      <div class="tile"><span class="label">Audit topilmalari</span><span class="value num">1 572</span><span class="sub">8 ta qoida bo&#39;yicha</span></div>
+      
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>Topilmalar qoidalar bo'yicha</h2>
+    <p>Har bir qoida alohida SQL fayl sifatida yozilgan, chegaralari sozlamalar faylidan olinadi.</p>
+  </div>
+  <div class="panel"><svg viewBox="0 0 760 274" class="chart" role="img" preserveAspectRatio="xMinYMin meet"><line x1="310.0" x2="310.0" y1="4" y2="248" class="grid"/><text x="310.0" y="266" class="tick" text-anchor="middle">0</text><line x1="420.0" x2="420.0" y1="4" y2="248" class="grid"/><text x="420.0" y="266" class="tick" text-anchor="middle">200</text><line x1="530.0" x2="530.0" y1="4" y2="248" class="grid"/><text x="530.0" y="266" class="tick" text-anchor="middle">400</text><line x1="640.0" x2="640.0" y1="4" y2="248" class="grid"/><text x="640.0" y="266" class="tick" text-anchor="middle">600</text><g class="mark"><title>R01 Xaridni bo&#x27;lib-bo&#x27;lib amalga oshirish: 89 ta, 7,7 mlrd so&#x27;m</title><rect x="0" y="2.0" width="760" height="30" class="hit"/><path d="M310,8 h45.0 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-45.0 z" class="bar"/><text x="300" y="17.0" class="lab" text-anchor="end" dominant-baseline="central">R01 · Xaridni bo&#x27;lib-bo&#x27;lib amalga oshirish</text><text x="366.9" y="17.0" class="val" dominant-baseline="central">89</text></g><g class="mark"><title>R02 Ortiqcha to&#x27;lov: 300 ta, 3,0 mlrd so&#x27;m</title><rect x="0" y="32.0" width="760" height="30" class="hit"/><path d="M310,38 h161.0 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-161.0 z" class="bar"/><text x="300" y="47.0" class="lab" text-anchor="end" dominant-baseline="central">R02 · Ortiqcha to&#x27;lov</text><text x="483.0" y="47.0" class="val" dominant-baseline="central">300</text></g><g class="mark"><title>R03 Narxning sun&#x27;iy oshirilishi: 499 ta, 43,0 mlrd so&#x27;m</title><rect x="0" y="62.0" width="760" height="30" class="hit"/><path d="M310,68 h270.5 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-270.5 z" class="bar"/><text x="300" y="77.0" class="lab" text-anchor="end" dominant-baseline="central">R03 · Narxning sun&#x27;iy oshirilishi</text><text x="592.5" y="77.0" class="val" dominant-baseline="central">499</text></g><g class="mark"><title>R04 Yangi tashkil etilgan korxona: 116 ta, 211,5 mlrd so&#x27;m</title><rect x="0" y="92.0" width="760" height="30" class="hit"/><path d="M310,98 h59.8 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-59.8 z" class="bar"/><text x="300" y="107.0" class="lab" text-anchor="end" dominant-baseline="central">R04 · Yangi tashkil etilgan korxona</text><text x="381.8" y="107.0" class="val" dominant-baseline="central">116</text></g><g class="mark"><title>R05 Affillangan yetkazuvchilar: 40 ta, 103,5 mlrd so&#x27;m</title><rect x="0" y="122.0" width="760" height="30" class="hit"/><path d="M310,128 h18.0 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-18.0 z" class="bar"/><text x="300" y="137.0" class="lab" text-anchor="end" dominant-baseline="central">R05 · Affillangan yetkazuvchilar</text><text x="340.0" y="137.0" class="val" dominant-baseline="central">40</text></g><g class="mark"><title>R06 Yetkazuvchi konsentratsiyasi: 25 ta, 1 641,6 mlrd so&#x27;m</title><rect x="0" y="152.0" width="760" height="30" class="hit"/><path d="M310,158 h9.8 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-9.8 z" class="bar"/><text x="300" y="167.0" class="lab" text-anchor="end" dominant-baseline="central">R06 · Yetkazuvchi konsentratsiyasi</text><text x="331.8" y="167.0" class="val" dominant-baseline="central">25</text></g><g class="mark"><title>R07 Shartnomadan oldin to&#x27;lov: 200 ta, 4,0 mlrd so&#x27;m</title><rect x="0" y="182.0" width="760" height="30" class="hit"/><path d="M310,188 h106.0 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-106.0 z" class="bar"/><text x="300" y="197.0" class="lab" text-anchor="end" dominant-baseline="central">R07 · Shartnomadan oldin to&#x27;lov</text><text x="428.0" y="197.0" class="val" dominant-baseline="central">200</text></g><g class="mark"><title>R08 Tugatilgan korxonaga to&#x27;lov: 303 ta, 5,7 mlrd so&#x27;m</title><rect x="0" y="212.0" width="760" height="30" class="hit"/><path d="M310,218 h162.7 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-162.7 z" class="bar"/><text x="300" y="227.0" class="lab" text-anchor="end" dominant-baseline="central">R08 · Tugatilgan korxonaga to&#x27;lov</text><text x="484.6" y="227.0" class="val" dominant-baseline="central">303</text></g><line x1="310" x2="310" y1="4" y2="248" class="axis"/></svg></div>
+  <div class="table-frame">
+    <table>
+      <thead><tr><th>Kod</th><th>Qoida</th><th>Daraja</th><th class="r">Ball</th><th class="r">Topildi</th><th class="r">Xavf ostidagi summa</th></tr></thead>
+      <tbody>
+      
+      <tr>
+        <td class="mono">R01</td>
+        <td><div>Xaridni bo&#39;lib-bo&#39;lib amalga oshirish</div><div class="desc">Tender chegarasidan qochish uchun bitta xarid bir nechta kichik to&#39;g&#39;ridan-to&#39;g&#39;ri shartnomaga bo&#39;lingan.</div></td>
+        <td><span class="sev sev-high">Yuqori</span></td>
+        <td class="r">4</td>
+        <td class="r">89</td>
+        <td class="r">7,7 mlrd so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td class="mono">R02</td>
+        <td><div>Ortiqcha to&#39;lov</div><div class="desc">Shartnoma bo&#39;yicha to&#39;langan summa shartnoma qiymatidan oshib ketgan.</div></td>
+        <td><span class="sev sev-high">Yuqori</span></td>
+        <td class="r">5</td>
+        <td class="r">300</td>
+        <td class="r">3,0 mlrd so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td class="mono">R03</td>
+        <td><div>Narxning sun&#39;iy oshirilishi</div><div class="desc">Birlik narxi shu oydagi bozor medianasidan belgilangan koeffitsiyentdan ko&#39;proq yuqori.</div></td>
+        <td><span class="sev sev-mid">O&#39;rta</span></td>
+        <td class="r">3</td>
+        <td class="r">499</td>
+        <td class="r">43,0 mlrd so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td class="mono">R04</td>
+        <td><div>Yangi tashkil etilgan korxona</div><div class="desc">Ro&#39;yxatdan o&#39;tganiga oz vaqt bo&#39;lgan korxona bilan yirik shartnoma tuzilgan.</div></td>
+        <td><span class="sev sev-mid">O&#39;rta</span></td>
+        <td class="r">3</td>
+        <td class="r">116</td>
+        <td class="r">211,5 mlrd so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td class="mono">R05</td>
+        <td><div>Affillangan yetkazuvchilar</div><div class="desc">Direktori yoki manzili bir xil korxonalar bitta buyurtmachida g&#39;olib bo&#39;lgan.</div></td>
+        <td><span class="sev sev-high">Yuqori</span></td>
+        <td class="r">4</td>
+        <td class="r">40</td>
+        <td class="r">103,5 mlrd so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td class="mono">R06</td>
+        <td><div>Yetkazuvchi konsentratsiyasi</div><div class="desc">Bitta yetkazuvchi buyurtmachi yillik xarajatining katta qismini olgan.</div></td>
+        <td><span class="sev sev-low">Past</span></td>
+        <td class="r">2</td>
+        <td class="r">25</td>
+        <td class="r">1 641,6 mlrd so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td class="mono">R07</td>
+        <td><div>Shartnomadan oldin to&#39;lov</div><div class="desc">To&#39;lov shartnoma tuzilgan sanadan oldin amalga oshirilgan.</div></td>
+        <td><span class="sev sev-high">Yuqori</span></td>
+        <td class="r">4</td>
+        <td class="r">200</td>
+        <td class="r">4,0 mlrd so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td class="mono">R08</td>
+        <td><div>Tugatilgan korxonaga to&#39;lov</div><div class="desc">To&#39;lov faoliyati rasman tugatilgan korxonaga o&#39;tkazilgan.</div></td>
+        <td><span class="sev sev-crit">Juda yuqori</span></td>
+        <td class="r">5</td>
+        <td class="r">303</td>
+        <td class="r">5,7 mlrd so&#39;m</td>
+      </tr>
+      
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>Eng yuqori xavfli buyurtmachilar</h2>
+    <p>Xavf balli — har bir topilma qoidasining og'irligi yig'indisi. Bir nechta turdagi qoidalar ostiga tushgan tashkilotlar birinchi navbatda tekshiriladi.</p>
+  </div>
+  <div class="table-frame">
+    <table>
+      <thead><tr><th>Buyurtmachi</th><th>Hudud · soha</th><th>Qoidalar</th><th class="r">Topilma</th><th class="r">Ball</th><th class="r">Xavf ostidagi summa</th></tr></thead>
+      <tbody>
+      
+      <tr>
+        <td><span class="mono">B0377</span></td>
+        <td>Jizzax<div class="desc">Transport</div></td>
+        <td><span class="chip">R01</span><span class="chip">R02</span><span class="chip">R03</span><span class="chip">R07</span><span class="chip">R08</span></td>
+        <td class="r">102</td>
+        <td class="r"><span class="score">420</span></td>
+        <td class="r">3,3 mlrd so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td><span class="mono">B0029</span></td>
+        <td>Toshkent shahri<div class="desc">Qishloq xo&#39;jaligi</div></td>
+        <td><span class="chip">R01</span><span class="chip">R02</span><span class="chip">R03</span><span class="chip">R04</span><span class="chip">R06</span><span class="chip">R07</span><span class="chip">R08</span></td>
+        <td class="r">52</td>
+        <td class="r"><span class="score">217</span></td>
+        <td class="r">216,5 mlrd so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td><span class="mono">B0327</span></td>
+        <td>Samarqand<div class="desc">Xalq ta&#39;limi</div></td>
+        <td><span class="chip">R01</span><span class="chip">R02</span><span class="chip">R03</span><span class="chip">R05</span><span class="chip">R06</span><span class="chip">R07</span><span class="chip">R08</span></td>
+        <td class="r">35</td>
+        <td class="r"><span class="score">130</span></td>
+        <td class="r">187,3 mlrd so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td><span class="mono">B0055</span></td>
+        <td>Navoiy<div class="desc">Qurilish va kommunal</div></td>
+        <td><span class="chip">R02</span><span class="chip">R03</span><span class="chip">R04</span><span class="chip">R06</span><span class="chip">R07</span><span class="chip">R08</span></td>
+        <td class="r">30</td>
+        <td class="r"><span class="score">125</span></td>
+        <td class="r">230,4 mlrd so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td><span class="mono">B0121</span></td>
+        <td>Jizzax<div class="desc">Qurilish va kommunal</div></td>
+        <td><span class="chip">R02</span><span class="chip">R03</span><span class="chip">R04</span><span class="chip">R06</span><span class="chip">R07</span><span class="chip">R08</span></td>
+        <td class="r">31</td>
+        <td class="r"><span class="score">116</span></td>
+        <td class="r">173,7 mlrd so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td><span class="mono">B0190</span></td>
+        <td>Sirdaryo<div class="desc">Oliy ta&#39;lim</div></td>
+        <td><span class="chip">R01</span><span class="chip">R02</span><span class="chip">R03</span><span class="chip">R04</span><span class="chip">R07</span><span class="chip">R08</span></td>
+        <td class="r">28</td>
+        <td class="r"><span class="score">112</span></td>
+        <td class="r">2,0 mlrd so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td><span class="mono">B0025</span></td>
+        <td>Jizzax<div class="desc">Madaniyat va sport</div></td>
+        <td><span class="chip">R01</span><span class="chip">R02</span><span class="chip">R03</span><span class="chip">R06</span><span class="chip">R07</span><span class="chip">R08</span></td>
+        <td class="r">26</td>
+        <td class="r"><span class="score">98</span></td>
+        <td class="r">171,0 mlrd so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td><span class="mono">B0265</span></td>
+        <td>Navoiy<div class="desc">Ijtimoiy himoya</div></td>
+        <td><span class="chip">R01</span><span class="chip">R02</span><span class="chip">R03</span><span class="chip">R07</span><span class="chip">R08</span></td>
+        <td class="r">23</td>
+        <td class="r"><span class="score">90</span></td>
+        <td class="r">1,1 mlrd so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td><span class="mono">B0310</span></td>
+        <td>Xorazm<div class="desc">Sog&#39;liqni saqlash</div></td>
+        <td><span class="chip">R02</span><span class="chip">R03</span><span class="chip">R07</span><span class="chip">R08</span></td>
+        <td class="r">17</td>
+        <td class="r"><span class="score">72</span></td>
+        <td class="r">425,8 mln so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td><span class="mono">B0252</span></td>
+        <td>Qashqadaryo<div class="desc">Qurilish va kommunal</div></td>
+        <td><span class="chip">R01</span><span class="chip">R02</span><span class="chip">R03</span><span class="chip">R07</span><span class="chip">R08</span></td>
+        <td class="r">17</td>
+        <td class="r"><span class="score">69</span></td>
+        <td class="r">874,1 mln so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td><span class="mono">B0375</span></td>
+        <td>Sirdaryo<div class="desc">Ijtimoiy himoya</div></td>
+        <td><span class="chip">R01</span><span class="chip">R02</span><span class="chip">R03</span><span class="chip">R07</span><span class="chip">R08</span></td>
+        <td class="r">14</td>
+        <td class="r"><span class="score">64</span></td>
+        <td class="r">501,0 mln so&#39;m</td>
+      </tr>
+      
+      <tr>
+        <td><span class="mono">B0012</span></td>
+        <td>Buxoro<div class="desc">Ijtimoiy himoya</div></td>
+        <td><span class="chip">R01</span><span class="chip">R02</span><span class="chip">R03</span><span class="chip">R04</span><span class="chip">R07</span><span class="chip">R08</span></td>
+        <td class="r">14</td>
+        <td class="r"><span class="score">63</span></td>
+        <td class="r">1,2 mlrd so&#39;m</td>
+      </tr>
+      
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>Hududlar va dinamika</h2>
+  </div>
+  <div class="panel"><h3>Xavf ostidagi summa hududlar bo'yicha, mlrd so'm</h3><svg viewBox="0 0 760 454" class="chart" role="img" preserveAspectRatio="xMinYMin meet"><line x1="220.0" x2="220.0" y1="4" y2="428" class="grid"/><text x="220.0" y="446" class="tick" text-anchor="middle">0</text><line x1="325.0" x2="325.0" y1="4" y2="428" class="grid"/><text x="325.0" y="446" class="tick" text-anchor="middle">100</text><line x1="430.0" x2="430.0" y1="4" y2="428" class="grid"/><text x="430.0" y="446" class="tick" text-anchor="middle">200</text><line x1="535.0" x2="535.0" y1="4" y2="428" class="grid"/><text x="535.0" y="446" class="tick" text-anchor="middle">300</text><line x1="640.0" x2="640.0" y1="4" y2="428" class="grid"/><text x="640.0" y="446" class="tick" text-anchor="middle">400</text><g class="mark"><title>Jizzax: 366,6 mlrd so&#x27;m, 208 ta topilma</title><rect x="0" y="2.0" width="760" height="30" class="hit"/><path d="M220,8 h380.9 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-380.9 z" class="bar"/><text x="210" y="17.0" class="lab" text-anchor="end" dominant-baseline="central">Jizzax</text><text x="612.9" y="17.0" class="val" dominant-baseline="central">366,6 mlrd</text></g><g class="mark"><title>Navoiy: 339,1 mlrd so&#x27;m, 149 ta topilma</title><rect x="0" y="32.0" width="760" height="30" class="hit"/><path d="M220,38 h352.0 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-352.0 z" class="bar"/><text x="210" y="47.0" class="lab" text-anchor="end" dominant-baseline="central">Navoiy</text><text x="584.0" y="47.0" class="val" dominant-baseline="central">339,1 mlrd</text></g><g class="mark"><title>Samarqand: 309,3 mlrd so&#x27;m, 154 ta topilma</title><rect x="0" y="62.0" width="760" height="30" class="hit"/><path d="M220,68 h320.7 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-320.7 z" class="bar"/><text x="210" y="77.0" class="lab" text-anchor="end" dominant-baseline="central">Samarqand</text><text x="552.7" y="77.0" class="val" dominant-baseline="central">309,3 mlrd</text></g><g class="mark"><title>Toshkent shahri: 255,9 mlrd so&#x27;m, 113 ta topilma</title><rect x="0" y="92.0" width="760" height="30" class="hit"/><path d="M220,98 h264.7 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-264.7 z" class="bar"/><text x="210" y="107.0" class="lab" text-anchor="end" dominant-baseline="central">Toshkent shahri</text><text x="496.7" y="107.0" class="val" dominant-baseline="central">255,9 mlrd</text></g><g class="mark"><title>Farg&#x27;ona: 160,3 mlrd so&#x27;m, 66 ta topilma</title><rect x="0" y="122.0" width="760" height="30" class="hit"/><path d="M220,128 h164.3 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-164.3 z" class="bar"/><text x="210" y="137.0" class="lab" text-anchor="end" dominant-baseline="central">Farg&#x27;ona</text><text x="396.3" y="137.0" class="val" dominant-baseline="central">160,3 mlrd</text></g><g class="mark"><title>Toshkent viloyati: 110,3 mlrd so&#x27;m, 102 ta topilma</title><rect x="0" y="152.0" width="760" height="30" class="hit"/><path d="M220,158 h111.8 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-111.8 z" class="bar"/><text x="210" y="167.0" class="lab" text-anchor="end" dominant-baseline="central">Toshkent viloyati</text><text x="343.8" y="167.0" class="val" dominant-baseline="central">110,3 mlrd</text></g><g class="mark"><title>Namangan: 103,1 mlrd so&#x27;m, 103 ta topilma</title><rect x="0" y="182.0" width="760" height="30" class="hit"/><path d="M220,188 h104.2 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-104.2 z" class="bar"/><text x="210" y="197.0" class="lab" text-anchor="end" dominant-baseline="central">Namangan</text><text x="336.2" y="197.0" class="val" dominant-baseline="central">103,1 mlrd</text></g><g class="mark"><title>Qashqadaryo: 98,9 mlrd so&#x27;m, 70 ta topilma</title><rect x="0" y="212.0" width="760" height="30" class="hit"/><path d="M220,218 h99.9 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-99.9 z" class="bar"/><text x="210" y="227.0" class="lab" text-anchor="end" dominant-baseline="central">Qashqadaryo</text><text x="331.9" y="227.0" class="val" dominant-baseline="central">98,9 mlrd</text></g><g class="mark"><title>Qoraqalpog&#x27;iston Respublikasi: 74,9 mlrd so&#x27;m, 97 ta topilma</title><rect x="0" y="242.0" width="760" height="30" class="hit"/><path d="M220,248 h74.6 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-74.6 z" class="bar"/><text x="210" y="257.0" class="lab" text-anchor="end" dominant-baseline="central">Qoraqalpog&#x27;iston Respublikasi</text><text x="306.6" y="257.0" class="val" dominant-baseline="central">74,9 mlrd</text></g><g class="mark"><title>Andijon: 58,1 mlrd so&#x27;m, 107 ta topilma</title><rect x="0" y="272.0" width="760" height="30" class="hit"/><path d="M220,278 h57.0 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-57.0 z" class="bar"/><text x="210" y="287.0" class="lab" text-anchor="end" dominant-baseline="central">Andijon</text><text x="289.0" y="287.0" class="val" dominant-baseline="central">58,1 mlrd</text></g><g class="mark"><title>Sirdaryo: 57,2 mlrd so&#x27;m, 152 ta topilma</title><rect x="0" y="302.0" width="760" height="30" class="hit"/><path d="M220,308 h56.0 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-56.0 z" class="bar"/><text x="210" y="317.0" class="lab" text-anchor="end" dominant-baseline="central">Sirdaryo</text><text x="288.0" y="317.0" class="val" dominant-baseline="central">57,2 mlrd</text></g><g class="mark"><title>Xorazm: 48,7 mlrd so&#x27;m, 94 ta topilma</title><rect x="0" y="332.0" width="760" height="30" class="hit"/><path d="M220,338 h47.1 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-47.1 z" class="bar"/><text x="210" y="347.0" class="lab" text-anchor="end" dominant-baseline="central">Xorazm</text><text x="279.1" y="347.0" class="val" dominant-baseline="central">48,7 mlrd</text></g><g class="mark"><title>Surxondaryo: 19,0 mlrd so&#x27;m, 73 ta topilma</title><rect x="0" y="362.0" width="760" height="30" class="hit"/><path d="M220,368 h16.0 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-16.0 z" class="bar"/><text x="210" y="377.0" class="lab" text-anchor="end" dominant-baseline="central">Surxondaryo</text><text x="248.0" y="377.0" class="val" dominant-baseline="central">19,0 mlrd</text></g><g class="mark"><title>Buxoro: 18,8 mlrd so&#x27;m, 84 ta topilma</title><rect x="0" y="392.0" width="760" height="30" class="hit"/><path d="M220,398 h15.7 a4,4 0 0 1 4,4 v10 a4,4 0 0 1 -4,4 h-15.7 z" class="bar"/><text x="210" y="407.0" class="lab" text-anchor="end" dominant-baseline="central">Buxoro</text><text x="247.7" y="407.0" class="val" dominant-baseline="central">18,8 mlrd</text></g><line x1="220" x2="220" y1="4" y2="428" class="axis"/></svg></div>
+  <div class="panel chart-wrap"><h3>Oylik shartnomalar hajmi, mlrd so'm</h3><svg viewBox="0 0 760 260" class="chart line-chart" role="img" data-points='[{&quot;x&quot;: 64.0, &quot;y&quot;: 90.7, &quot;t&quot;: &quot;2024-01: 1\u202f288,2 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 93.2, &quot;y&quot;: 89.2, &quot;t&quot;: &quot;2024-02: 1\u202f302,5 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 122.4, &quot;y&quot;: 101.3, &quot;t&quot;: &quot;2024-03: 1\u202f187,3 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 151.7, &quot;y&quot;: 100.1, &quot;t&quot;: &quot;2024-04: 1\u202f199,5 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 180.9, &quot;y&quot;: 94.2, &quot;t&quot;: &quot;2024-05: 1\u202f255,7 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 210.1, &quot;y&quot;: 98.0, &quot;t&quot;: &quot;2024-06: 1\u202f219,4 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 239.3, &quot;y&quot;: 94.4, &quot;t&quot;: &quot;2024-07: 1\u202f253,1 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 268.5, &quot;y&quot;: 82.4, &quot;t&quot;: &quot;2024-08: 1\u202f368,0 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 297.7, &quot;y&quot;: 89.4, &quot;t&quot;: &quot;2024-09: 1\u202f300,6 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 327.0, &quot;y&quot;: 93.0, &quot;t&quot;: &quot;2024-10: 1\u202f266,5 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 356.2, &quot;y&quot;: 94.1, &quot;t&quot;: &quot;2024-11: 1\u202f255,7 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 385.4, &quot;y&quot;: 102.1, &quot;t&quot;: &quot;2024-12: 1\u202f180,3 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 414.6, &quot;y&quot;: 80.5, &quot;t&quot;: &quot;2025-01: 1\u202f385,3 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 443.8, &quot;y&quot;: 101.6, &quot;t&quot;: &quot;2025-02: 1\u202f185,0 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 473.0, &quot;y&quot;: 63.5, &quot;t&quot;: &quot;2025-03: 1\u202f547,3 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 502.3, &quot;y&quot;: 86.9, &quot;t&quot;: &quot;2025-04: 1\u202f325,2 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 531.5, &quot;y&quot;: 47.9, &quot;t&quot;: &quot;2025-05: 1\u202f696,0 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 560.7, &quot;y&quot;: 70.3, &quot;t&quot;: &quot;2025-06: 1\u202f482,8 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 589.9, &quot;y&quot;: 74.6, &quot;t&quot;: &quot;2025-07: 1\u202f441,7 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 619.1, &quot;y&quot;: 77.8, &quot;t&quot;: &quot;2025-08: 1\u202f411,0 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 648.3, &quot;y&quot;: 71.7, &quot;t&quot;: &quot;2025-09: 1\u202f469,3 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 677.6, &quot;y&quot;: 93.8, &quot;t&quot;: &quot;2025-10: 1\u202f259,1 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 706.8, &quot;y&quot;: 96.6, &quot;t&quot;: &quot;2025-11: 1\u202f232,4 mlrd so&#x27;m&quot;}, {&quot;x&quot;: 736.0, &quot;y&quot;: 91.2, &quot;t&quot;: &quot;2025-12: 1\u202f283,8 mlrd so&#x27;m&quot;}]'><line x1="64" x2="736" y1="226.0" y2="226.0" class="grid"/><text x="56" y="226.0" class="tick" text-anchor="end" dominant-baseline="central">0</text><line x1="64" x2="736" y1="173.5" y2="173.5" class="grid"/><text x="56" y="173.5" class="tick" text-anchor="end" dominant-baseline="central">500</text><line x1="64" x2="736" y1="121.0" y2="121.0" class="grid"/><text x="56" y="121.0" class="tick" text-anchor="end" dominant-baseline="central">1 000</text><line x1="64" x2="736" y1="68.5" y2="68.5" class="grid"/><text x="56" y="68.5" class="tick" text-anchor="end" dominant-baseline="central">1 500</text><line x1="64" x2="736" y1="16.0" y2="16.0" class="grid"/><text x="56" y="16.0" class="tick" text-anchor="end" dominant-baseline="central">2 000</text><text x="64.0" y="250" class="tick" text-anchor="middle">2024-01</text><text x="151.7" y="250" class="tick" text-anchor="middle">2024-04</text><text x="239.3" y="250" class="tick" text-anchor="middle">2024-07</text><text x="327.0" y="250" class="tick" text-anchor="middle">2024-10</text><text x="414.6" y="250" class="tick" text-anchor="middle">2025-01</text><text x="502.3" y="250" class="tick" text-anchor="middle">2025-04</text><text x="589.9" y="250" class="tick" text-anchor="middle">2025-07</text><text x="677.6" y="250" class="tick" text-anchor="middle">2025-10</text><text x="736.0" y="250" class="tick" text-anchor="middle">2025-12</text><path d="M64.0,90.7 L93.2,89.2 L122.4,101.3 L151.7,100.1 L180.9,94.2 L210.1,98.0 L239.3,94.4 L268.5,82.4 L297.7,89.4 L327.0,93.0 L356.2,94.1 L385.4,102.1 L414.6,80.5 L443.8,101.6 L473.0,63.5 L502.3,86.9 L531.5,47.9 L560.7,70.3 L589.9,74.6 L619.1,77.8 L648.3,71.7 L677.6,93.8 L706.8,96.6 L736.0,91.2 L736.0,226 L64.0,226 Z" class="area"/><path d="M64.0,90.7 L93.2,89.2 L122.4,101.3 L151.7,100.1 L180.9,94.2 L210.1,98.0 L239.3,94.4 L268.5,82.4 L297.7,89.4 L327.0,93.0 L356.2,94.1 L385.4,102.1 L414.6,80.5 L443.8,101.6 L473.0,63.5 L502.3,86.9 L531.5,47.9 L560.7,70.3 L589.9,74.6 L619.1,77.8 L648.3,71.7 L677.6,93.8 L706.8,96.6 L736.0,91.2" class="line"/><circle cx="736.0" cy="91.2" r="4.5" class="dot"/><line class="xhair" x1="0" x2="0" y1="16" y2="226" visibility="hidden"/><circle class="xdot" r="4.5" cx="0" cy="0" visibility="hidden"/><rect class="hitarea" x="64" y="16" width="672" height="210"/><line x1="64" x2="736" y1="226" y2="226" class="axis"/></svg><div class="tip" hidden></div></div>
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>Namuna topilmalar</h2>
+    <p>Har bir qoida bo'yicha summasi eng katta uchta holat. To'liq ro'yxat omborning <span class="mono">audit.findings</span> jadvalida.</p>
+  </div>
+  <div class="samples">
+  
+    <div class="sample">
+      <div class="sample-head"><h3><span class="mono">R01</span> Xaridni bo&#39;lib-bo&#39;lib amalga oshirish</h3><span class="sev sev-high">Yuqori</span></div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0147 → STIR 907744954</span><b class="num">140,0 mln so&#39;m</b></div>
+        <dl><div><dt>toifa</dt><dd class="num">IT xizmatlari</dd></div><div><dt>boshlanish</dt><dd class="num">2024-12-29</dd></div><div><dt>tugash</dt><dd class="num">2025-01-21</dd></div><div><dt>shartnomalar</dt><dd class="num">6</dd></div><div><dt>jami</dt><dd class="num">140,0 mln so&#39;m</dd></div><div><dt>chegara</dt><dd class="num">25,0 mln so&#39;m</dd></div></dl>
+      </div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0007 → STIR 990100140</span><b class="num">139,2 mln so&#39;m</b></div>
+        <dl><div><dt>toifa</dt><dd class="num">Yoqilg&#39;i</dd></div><div><dt>boshlanish</dt><dd class="num">2024-11-17</dd></div><div><dt>tugash</dt><dd class="num">2024-12-06</dd></div><div><dt>shartnomalar</dt><dd class="num">6</dd></div><div><dt>jami</dt><dd class="num">139,2 mln so&#39;m</dd></div><div><dt>chegara</dt><dd class="num">25,0 mln so&#39;m</dd></div></dl>
+      </div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0356 → STIR 979857462</span><b class="num">138,1 mln so&#39;m</b></div>
+        <dl><div><dt>toifa</dt><dd class="num">Avtomobil ehtiyot qismlari</dd></div><div><dt>boshlanish</dt><dd class="num">2024-02-04</dd></div><div><dt>tugash</dt><dd class="num">2024-02-28</dd></div><div><dt>shartnomalar</dt><dd class="num">6</dd></div><div><dt>jami</dt><dd class="num">138,1 mln so&#39;m</dd></div><div><dt>chegara</dt><dd class="num">25,0 mln so&#39;m</dd></div></dl>
+      </div>
+      
+    </div>
+  
+    <div class="sample">
+      <div class="sample-head"><h3><span class="mono">R02</span> Ortiqcha to&#39;lov</h3><span class="sev sev-high">Yuqori</span></div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0272 → STIR 981069729</span><b class="num">262,6 mln so&#39;m</b></div>
+        <dl><div><dt>shartnoma</dt><dd class="num">1,5 mlrd so&#39;m</dd></div><div><dt>to&#39;langan</dt><dd class="num">1,8 mlrd so&#39;m</dd></div><div><dt>ortiqcha %</dt><dd class="num">17,5</dd></div><div><dt>to&#39;lovlar</dt><dd class="num">1</dd></div></dl>
+      </div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0196 → STIR 913643951</span><b class="num">208,0 mln so&#39;m</b></div>
+        <dl><div><dt>shartnoma</dt><dd class="num">558,3 mln so&#39;m</dd></div><div><dt>to&#39;langan</dt><dd class="num">766,3 mln so&#39;m</dd></div><div><dt>ortiqcha %</dt><dd class="num">37,3</dd></div><div><dt>to&#39;lovlar</dt><dd class="num">5</dd></div></dl>
+      </div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0346 → STIR 994839292</span><b class="num">191,7 mln so&#39;m</b></div>
+        <dl><div><dt>shartnoma</dt><dd class="num">627,0 mln so&#39;m</dd></div><div><dt>to&#39;langan</dt><dd class="num">818,7 mln so&#39;m</dd></div><div><dt>ortiqcha %</dt><dd class="num">30,6</dd></div><div><dt>to&#39;lovlar</dt><dd class="num">2</dd></div></dl>
+      </div>
+      
+    </div>
+  
+    <div class="sample">
+      <div class="sample-head"><h3><span class="mono">R03</span> Narxning sun&#39;iy oshirilishi</h3><span class="sev sev-mid">O&#39;rta</span></div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0180 → STIR 915392519</span><b class="num">1,1 mlrd so&#39;m</b></div>
+        <dl><div><dt>toifa</dt><dd class="num">Oziq-ovqat mahsulotlari</dd></div><div><dt>birlik narxi</dt><dd class="num">163 071 so&#39;m</dd></div><div><dt>bozor medianasi</dt><dd class="num">35 973 so&#39;m</dd></div><div><dt>nisbat</dt><dd class="num">4,53</dd></div></dl>
+      </div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0314 → STIR 954814989</span><b class="num">1,1 mlrd so&#39;m</b></div>
+        <dl><div><dt>toifa</dt><dd class="num">Dori-darmon</dd></div><div><dt>birlik narxi</dt><dd class="num">216 514 so&#39;m</dd></div><div><dt>bozor medianasi</dt><dd class="num">89 534 so&#39;m</dd></div><div><dt>nisbat</dt><dd class="num">2,42</dd></div></dl>
+      </div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0094 → STIR 901300800</span><b class="num">1,1 mlrd so&#39;m</b></div>
+        <dl><div><dt>toifa</dt><dd class="num">Dori-darmon</dd></div><div><dt>birlik narxi</dt><dd class="num">302 273 so&#39;m</dd></div><div><dt>bozor medianasi</dt><dd class="num">87 944 so&#39;m</dd></div><div><dt>nisbat</dt><dd class="num">3,44</dd></div></dl>
+      </div>
+      
+    </div>
+  
+    <div class="sample">
+      <div class="sample-head"><h3><span class="mono">R04</span> Yangi tashkil etilgan korxona</h3><span class="sev sev-mid">O&#39;rta</span></div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0121 → STIR 986787365</span><b class="num">3,0 mlrd so&#39;m</b></div>
+        <dl><div><dt>ro&#39;yxatdan o&#39;tgan</dt><dd class="num">2025-09-08</dd></div><div><dt>shartnoma sanasi</dt><dd class="num">2025-10-30</dd></div><div><dt>kun o&#39;tgan</dt><dd class="num">52</dd></div><div><dt>summa</dt><dd class="num">3,0 mlrd so&#39;m</dd></div></dl>
+      </div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0385 → STIR 921539824</span><b class="num">3,0 mlrd so&#39;m</b></div>
+        <dl><div><dt>ro&#39;yxatdan o&#39;tgan</dt><dd class="num">2024-03-30</dd></div><div><dt>shartnoma sanasi</dt><dd class="num">2024-05-05</dd></div><div><dt>kun o&#39;tgan</dt><dd class="num">36</dd></div><div><dt>summa</dt><dd class="num">3,0 mlrd so&#39;m</dd></div></dl>
+      </div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0126 → STIR 935334863</span><b class="num">2,9 mlrd so&#39;m</b></div>
+        <dl><div><dt>ro&#39;yxatdan o&#39;tgan</dt><dd class="num">2024-09-05</dd></div><div><dt>shartnoma sanasi</dt><dd class="num">2024-10-22</dd></div><div><dt>kun o&#39;tgan</dt><dd class="num">47</dd></div><div><dt>summa</dt><dd class="num">2,9 mlrd so&#39;m</dd></div></dl>
+      </div>
+      
+    </div>
+  
+    <div class="sample">
+      <div class="sample-head"><h3><span class="mono">R05</span> Affillangan yetkazuvchilar</h3><span class="sev sev-high">Yuqori</span></div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0279 → STIR 930377665</span><b class="num">4,1 mlrd so&#39;m</b></div>
+        <dl><div><dt>bog&#39;liqlik</dt><dd class="num">direktor</dd></div><div><dt>korxonalar</dt><dd class="num">930377665, 970397527, 978004313</dd></div><div><dt>shartnomalar</dt><dd class="num">14</dd></div><div><dt>jami</dt><dd class="num">4,1 mlrd so&#39;m</dd></div></dl>
+      </div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0176 → STIR 908258486</span><b class="num">4,0 mlrd so&#39;m</b></div>
+        <dl><div><dt>bog&#39;liqlik</dt><dd class="num">direktor</dd></div><div><dt>korxonalar</dt><dd class="num">908258486, 985408670</dd></div><div><dt>shartnomalar</dt><dd class="num">14</dd></div><div><dt>jami</dt><dd class="num">4,0 mlrd so&#39;m</dd></div></dl>
+      </div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0038 → STIR 902962648</span><b class="num">3,7 mlrd so&#39;m</b></div>
+        <dl><div><dt>bog&#39;liqlik</dt><dd class="num">direktor</dd></div><div><dt>korxonalar</dt><dd class="num">902962648, 923009949, 972348653</dd></div><div><dt>shartnomalar</dt><dd class="num">13</dd></div><div><dt>jami</dt><dd class="num">3,7 mlrd so&#39;m</dd></div></dl>
+      </div>
+      
+    </div>
+  
+    <div class="sample">
+      <div class="sample-head"><h3><span class="mono">R06</span> Yetkazuvchi konsentratsiyasi</h3><span class="sev sev-low">Past</span></div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0055 → STIR 939589065</span><b class="num">228,8 mlrd so&#39;m</b></div>
+        <dl><div><dt>yil</dt><dd class="num">2025</dd></div><div><dt>ulush %</dt><dd class="num">68,4</dd></div><div><dt>yetkazuvchi shartnomalari</dt><dd class="num">12</dd></div><div><dt>buyurtmachi shartnomalari</dt><dd class="num">5566</dd></div></dl>
+      </div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0029 → STIR 922810626</span><b class="num">214,3 mlrd so&#39;m</b></div>
+        <dl><div><dt>yil</dt><dd class="num">2025</dd></div><div><dt>ulush %</dt><dd class="num">58,6</dd></div><div><dt>yetkazuvchi shartnomalari</dt><dd class="num">19</dd></div><div><dt>buyurtmachi shartnomalari</dt><dd class="num">10707</dd></div></dl>
+      </div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0327 → STIR 928885472</span><b class="num">182,0 mlrd so&#39;m</b></div>
+        <dl><div><dt>yil</dt><dd class="num">2024</dd></div><div><dt>ulush %</dt><dd class="num">59,9</dd></div><div><dt>yetkazuvchi shartnomalari</dt><dd class="num">10</dd></div><div><dt>buyurtmachi shartnomalari</dt><dd class="num">7954</dd></div></dl>
+      </div>
+      
+    </div>
+  
+    <div class="sample">
+      <div class="sample-head"><h3><span class="mono">R07</span> Shartnomadan oldin to&#39;lov</h3><span class="sev sev-high">Yuqori</span></div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0110 → STIR 987001229</span><b class="num">219,9 mln so&#39;m</b></div>
+        <dl><div><dt>shartnoma</dt><dd class="num">C0481955</dd></div><div><dt>to&#39;lov sanasi</dt><dd class="num">2025-07-13</dd></div><div><dt>shartnoma sanasi</dt><dd class="num">2025-08-09</dd></div><div><dt>necha kun oldin</dt><dd class="num">27</dd></div></dl>
+      </div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0082 → STIR 923067589</span><b class="num">210,8 mln so&#39;m</b></div>
+        <dl><div><dt>shartnoma</dt><dd class="num">C0228276</dd></div><div><dt>to&#39;lov sanasi</dt><dd class="num">2024-08-05</dd></div><div><dt>shartnoma sanasi</dt><dd class="num">2024-10-04</dd></div><div><dt>necha kun oldin</dt><dd class="num">60</dd></div></dl>
+      </div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0213 → STIR 960863616</span><b class="num">167,7 mln so&#39;m</b></div>
+        <dl><div><dt>shartnoma</dt><dd class="num">C0232707</dd></div><div><dt>to&#39;lov sanasi</dt><dd class="num">2024-08-31</dd></div><div><dt>shartnoma sanasi</dt><dd class="num">2024-10-10</dd></div><div><dt>necha kun oldin</dt><dd class="num">40</dd></div></dl>
+      </div>
+      
+    </div>
+  
+    <div class="sample">
+      <div class="sample-head"><h3><span class="mono">R08</span> Tugatilgan korxonaga to&#39;lov</h3><span class="sev sev-crit">Juda yuqori</span></div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0312 → STIR 986060450</span><b class="num">623,1 mln so&#39;m</b></div>
+        <dl><div><dt>shartnoma</dt><dd class="num">C0574936</dd></div><div><dt>tugatilgan sana</dt><dd class="num">2026-03-22</dd></div><div><dt>to&#39;lov sanasi</dt><dd class="num">2026-04-30</dd></div></dl>
+      </div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0328 → STIR 931348155</span><b class="num">399,8 mln so&#39;m</b></div>
+        <dl><div><dt>shartnoma</dt><dd class="num">C0472154</dd></div><div><dt>tugatilgan sana</dt><dd class="num">2025-10-02</dd></div><div><dt>to&#39;lov sanasi</dt><dd class="num">2025-10-04</dd></div></dl>
+      </div>
+      
+      <div class="finding">
+        <div class="ids"><span class="mono">B0350 → STIR 995218110</span><b class="num">258,0 mln so&#39;m</b></div>
+        <dl><div><dt>shartnoma</dt><dd class="num">C0466761</dd></div><div><dt>tugatilgan sana</dt><dd class="num">2025-10-15</dd></div><div><dt>to&#39;lov sanasi</dt><dd class="num">2025-12-25</dd></div></dl>
+      </div>
+      
+    </div>
+  
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>Ma'lumot sifati</h2>
+    <p>Qoidaga to'g'ri kelmagan qatorlar o'chirilmaydi: ular sababi bilan karantin jadvaliga yoziladi va manba egasiga qaytariladi.</p>
+  </div>
+  <div class="grid-2">
+    <div class="table-frame">
+      <table>
+        <thead><tr><th>Ma'lumotlar to'plami</th><th class="r">Kirdi</th><th class="r">O'tdi</th><th class="r">Karantin</th><th class="r">Sifat, %</th></tr></thead>
+        <tbody><tr><td class="mono">payments</td><td class="r">1 509 809</td><td class="r">1 491 018</td><td class="r">11 280</td><td class="r">98,76</td></tr><tr><td class="mono">contracts</td><td class="r">605 900</td><td class="r">597 194</td><td class="r">3 898</td><td class="r">98,56</td></tr><tr><td class="mono">suppliers</td><td class="r">25 000</td><td class="r">25 000</td><td class="r">0</td><td class="r">100,00</td></tr><tr><td class="mono">buyers</td><td class="r">400</td><td class="r">400</td><td class="r">0</td><td class="r">100,00</td></tr></tbody>
+      </table>
+    </div>
+    <div class="table-frame">
+      <table>
+        <thead><tr><th>To'plam</th><th>Tekshiruv</th><th class="r">Qatorlar</th></tr></thead>
+        <tbody><tr><td class="mono">contracts</td><td>aynan takroriy qator (olib tashlandi)</td><td class="r">4 808</td></tr><tr><td class="mono">contracts</td><td>STIR formati noto&#39;g&#39;ri</td><td class="r">1 801</td></tr><tr><td class="mono">contracts</td><td>yetkazuvchi reyestrda yo&#39;q</td><td class="r">1 801</td></tr><tr><td class="mono">contracts</td><td>summa noto&#39;g&#39;ri yoki manfiy</td><td class="r">1 202</td></tr><tr><td class="mono">contracts</td><td>yetkazuvchi STIR bo&#39;sh</td><td class="r">900</td></tr><tr><td class="mono">contracts</td><td>noma&#39;lum buyurtmachi</td><td class="r">601</td></tr><tr><td class="mono">contracts</td><td>sana davrdan tashqarida</td><td class="r">300</td></tr><tr><td class="mono">payments</td><td>noma&#39;lum yoki karantindagi shartnoma</td><td class="r">11 280</td></tr><tr><td class="mono">payments</td><td>takroriy payment_id (API qayta yuborgan)</td><td class="r">7 511</td></tr><tr><td class="mono">payments</td><td>shartnoma_id bo&#39;sh</td><td class="r">751</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  
+  <div class="panel">
+    <h3>Spark va DuckDB natijalarini solishtirish</h3>
+    <p class="muted">Bir xil agregatsiya ikki mustaqil dvigatelda hisoblanib, natijalar qatorma-qator solishtirildi.</p>
+    <table><tbody><tr><td>spark_vs_duckdb: yetkazuvchi×yil farqlari</td><td class="r"><span class="ok">0 farq</span></td></tr><tr><td>spark_vs_duckdb: R02 ortiqcha to&#39;lov farqlari</td><td class="r"><span class="ok">0 farq</span></td></tr></tbody></table>
+  </div>
+  
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>Kelib chiqishi va texnik jurnal</h2>
+    <p>Har bir manbaning SHA-256 nazorat yig'indisi saqlanadi: hisobot qaysi aniq ma'lumotdan tuzilganini keyinchalik isbotlash mumkin.</p>
+  </div>
+  <div class="table-frame">
+    <table>
+      <thead><tr><th>Manba</th><th>Joylashuvi</th><th>SHA-256</th><th class="r">Qatorlar</th></tr></thead>
+      <tbody><tr><td class="mono">contracts</td><td class="mono">xarid_portal/contracts_2024_2025.csv</td><td class="mono" title="247d5857f5cb7a9b43575af20dad3e4f484daa84a66f1d441fb8e0e58985aa5c">247d5857f5cb7a9b…</td><td class="r">605 900</td></tr><tr><td class="mono">suppliers</td><td class="mono">soliq_registry/suppliers.xlsx</td><td class="mono" title="1bebb0696f43502abc165f337bc43735498552a07a6cf467f1af7ce2c9c3c6b7">1bebb0696f43502a…</td><td class="r">25 000</td></tr><tr><td class="mono">buyers</td><td class="mono">reference/buyers.csv</td><td class="mono" title="e8fd3763993461588d2db965c1e6a0690b661afcd99f907a07a5d76127e212f9">e8fd376399346158…</td><td class="r">400</td></tr><tr><td class="mono">market_prices</td><td class="mono">statistika/market_prices.csv</td><td class="mono" title="ffa0dbf406311f5952067bf9b5e77470bf9f69ff88ae65bda55199eecafe9a24">ffa0dbf406311f59…</td><td class="r">240</td></tr><tr><td class="mono">treasury_payments</td><td class="mono">http://127.0.0.1:8765/api/v1/payments</td><td class="mono" title="4a9e413f36788327fd4c8666451536fd0f6bd0ea37fd7e5e60130e48f70d9fc8">4a9e413f36788327…</td><td class="r">1 509 809</td></tr></tbody>
+    </table>
+  </div>
+  <div class="table-frame">
+    <table>
+      <thead><tr><th>Bosqich</th><th class="r">Vaqt, s</th></tr></thead>
+      <tbody><tr><td>1. Extract (manbalar → bronze)</td><td class="r">7,16</td></tr><tr><td>2. Transform + sifat nazorati (bronze → silver)</td><td class="r">2,37</td></tr><tr><td>3. Load (silver → DWH)</td><td class="r">1,30</td></tr><tr><td>4. Audit qoidalari</td><td class="r">0,67</td></tr><tr><td>5. Spark job + reconciliation</td><td class="r">23,82</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  <span>Python · Polars · DuckDB · Apache Spark · FastAPI · Jinja2</span>
+  <span>Ishga tushirgan: <span class="mono">root@vm</span> · holat: success</span>
+</footer>
+</div>
+
+<script>
+(function () {
+  document.querySelectorAll(".chart-wrap").forEach(function (wrap) {
+    var svg = wrap.querySelector("svg.line-chart"), tip = wrap.querySelector(".tip");
+    if (!svg || !tip) return;
+    var pts = JSON.parse(svg.getAttribute("data-points"));
+    var hair = svg.querySelector(".xhair"), dot = svg.querySelector(".xdot"), hit = svg.querySelector(".hitarea");
+    function show(evt) {
+      var pt = svg.createSVGPoint(); pt.x = evt.clientX; pt.y = evt.clientY;
+      var p = pt.matrixTransform(svg.getScreenCTM().inverse());
+      var best = pts[0];
+      pts.forEach(function (q) { if (Math.abs(q.x - p.x) < Math.abs(best.x - p.x)) best = q; });
+      hair.setAttribute("x1", best.x); hair.setAttribute("x2", best.x); hair.setAttribute("visibility", "visible");
+      dot.setAttribute("cx", best.x); dot.setAttribute("cy", best.y); dot.setAttribute("visibility", "visible");
+      var box = svg.getBoundingClientRect(), wb = wrap.getBoundingClientRect(), k = box.width / svg.viewBox.baseVal.width;
+      tip.textContent = best.t; tip.hidden = false;
+      tip.style.left = (box.left - wb.left + best.x * k) + "px";
+      tip.style.top = (box.top - wb.top + best.y * k) + "px";
+    }
+    function hide() { hair.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); tip.hidden = true; }
+    hit.addEventListener("pointermove", show);
+    hit.addEventListener("pointerleave", hide);
+  });
+})();
+</script>
+</body>
+</html>
