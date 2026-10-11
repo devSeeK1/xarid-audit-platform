@@ -4,6 +4,7 @@
     python -m pipeline api                        g'aznachilik mock API'sini ishga tushirish
     python -m pipeline run [--full-refresh] [--start-api] [--with-spark]
     python -m pipeline report [--run-id ID]       HTML audit hisobotini qayta qurish
+    python -m pipeline tekshir C0438999           shartnoma yoki yetkazuvchi (STIR) bo'yicha ish yig'majildi
     python -m pipeline demo [--scale 1.0] [--with-spark]   hammasini bitta buyruqda
 """
 from __future__ import annotations
@@ -28,6 +29,8 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--no-report", action="store_true")
     rp = sub.add_parser("report")
     rp.add_argument("--run-id")
+    t = sub.add_parser("tekshir", help="shartnoma ID yoki yetkazuvchi STIR")
+    t.add_argument("key")
     d = sub.add_parser("demo")
     d.add_argument("--scale", type=float, default=1.0)
     d.add_argument("--with-spark", action="store_true")
@@ -35,6 +38,9 @@ def main(argv: list[str] | None = None) -> int:
 
     settings = load_settings()
     settings.paths.ensure()
+    if args.cmd == "tekshir":
+        from pipeline.inspect import inspect
+        return inspect(settings, args.key)
     setup_logging(settings.paths.logs)
 
     if args.cmd == "generate":

@@ -19,7 +19,7 @@ Loyiha davlat auditining tipik vazifasini yechadi: ma'lumot bir necha tizimda (x
 | Ataylab qo'shilgan anomaliyalarni topish | **100%** (testlar bilan tasdiqlangan) |
 | To'liq ishlov vaqti (Spark'siz) | ≈ 12 s · Extract 7,2 s · Transform 2,4 s · Load 1,3 s · Audit 0,7 s |
 | Spark ↔ DuckDB natijalari farqi | **0** |
-| Testlar | 31 ta, hammasi o'tadi |
+| Testlar | 34 ta, hammasi o'tadi |
 
 Tayyor hisobot namunasi: [`reports/audit_report.html`](reports/audit_report.html). Faylni yuklab olib brauzerda oching yoki GitHub Pages orqali `docs/index.html` sahifasini ko'ring.
 
@@ -144,7 +144,19 @@ python -m pipeline run --full-refresh   # hammasini qaytadan yuklash
 python -m pipeline report               # hisobotni qayta qurish
 ```
 
-Natija `reports/audit_report.html` faylida. Ombor bilan to'g'ridan-to'g'ri ishlash:
+Natija `reports/audit_report.html` faylida.
+
+### Bitta xaridni tekshirish
+
+Hisobotdagi istalgan shartnoma, to'lov yoki yetkazuvchi bo'yicha to'liq "ish yig'majildi"ni chiqarish:
+
+```bash
+python -m pipeline tekshir C0438999     # shartnoma: narx, bozor medianasi, to'lovlar, signallar
+python -m pipeline tekshir P01437186    # to'lov: tegishli shartnoma ochiladi
+python -m pipeline tekshir 930377665    # yetkazuvchi: bog'liq korxonalar, buyurtmachilar, signallar
+```
+
+Ombor bilan to'g'ridan-to'g'ri ishlash:
 
 ```python
 import duckdb
@@ -167,9 +179,10 @@ pipeline/
   audit/engine.py           qoidalar katalogi va dvigateli, xavf balli
   report/                   HTML hisobot (Jinja2 + SVG grafiklar)
   run.py                    orkestrator: bosqichlar, vaqt o'lchash, xatolarni boshqarish
+  inspect.py                `tekshir` buyrug'i: bitta shartnoma/yetkazuvchi bo'yicha ish yig'majildi
 spark_jobs/supplier_spend.py PySpark agregatsiyasi
 sql/                        ombor sxemasi va 8 ta audit qoidasi
-tests/                      31 ta test: parserlar, xavfsizlik, API, to'liq jarayon
+tests/                      34 ta test: parserlar, xavfsizlik, API, to'liq jarayon, tekshir buyrug'i
 ```
 
 ## Testlar
