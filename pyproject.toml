@@ -1,0 +1,14 @@
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["data", "reports", "logs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+# E501: uzun SQL va f-string qatorlari ataylab bir qatorda qoldirilgan
+# E741: matematik formulalarda `l` nomi ishlatiladi
+ignore = ["E501", "E741"]

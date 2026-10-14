@@ -112,7 +112,7 @@ def svg_line(points: list[tuple[str, float]], tick_fmt, tip_fmt) -> str:
     out.append(f'<path d="{line}" class="line"/>')
     out.append(f'<circle cx="{xs[-1]:.1f}" cy="{ys[-1]:.1f}" r="4.5" class="dot"/>')
     out.append(f'<line class="xhair" x1="0" x2="0" y1="{top}" y2="{top + ph}" visibility="hidden"/>')
-    out.append(f'<circle class="xdot" r="4.5" cx="0" cy="0" visibility="hidden"/>')
+    out.append('<circle class="xdot" r="4.5" cx="0" cy="0" visibility="hidden"/>')
     out.append(f'<rect class="hitarea" x="{left}" y="{top}" width="{pw}" height="{ph}"/>')
     out.append(f'<line x1="{left}" x2="{width - right}" y1="{top + ph}" y2="{top + ph}" class="axis"/>')
     out.append("</svg>")

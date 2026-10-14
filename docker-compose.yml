@@ -1,0 +1,68 @@
+# Butun platformani bitta buyruq bilan ko'tarish:
+#   cp .env.example .env    (token va tuzni o'zgartiring)
+#   docker compose up -d report
+#   http://localhost:8080 — tayyor audit hisoboti
+#
+# Ketma-ketlik: generate (manba ma'lumotlari) -> api (g'aznachilik mock API, healthcheck)
+#               -> pipeline (ETL + DWH + audit) -> report (nginx, faqat o'qish)
+
+name: xarid-audit
+
+x-app: &app
+  image: ${IMAGE:-ghcr.io/devseek1/xarid-audit-platform:latest}
+  build: .
+  env_file: .env
+  volumes:
+    - data:/app/data
+    - reports:/app/reports
+    - logs:/app/logs
+
+services:
+  generate:
+    <<: *app
+    command: ["generate", "--scale", "${SCALE:-0.1}"]
+    restart: "no"
+
+  api:
+    <<: *app
+    command: ["api"]
+    environment:
+      TREASURY_API_HOST: 0.0.0.0
+      CHAOS_FAIL_RATE: ${CHAOS_FAIL_RATE:-0}
+    depends_on:
+      generate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+  pipeline:
+    <<: *app
+    command: ["run", "--full-refresh"]
+    environment:
+      TREASURY_API_URL: http://api:8765
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: "no"
+
+  report:
+    image: nginx:1.27-alpine
+    volumes:
+      - reports:/usr/share/nginx/html:ro
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "${REPORT_PORT:-8080}:80"
+    depends_on:
+      pipeline:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  data:
+  reports:
+  logs:

@@ -85,6 +85,8 @@ class Settings:
     @property
     def api(self) -> dict[str, Any]:
         cfg = dict(self.raw["api"])
+        # Konteynerda API boshqa servislarga ochilishi uchun host 0.0.0.0 qilib beriladi
+        cfg["host"] = os.getenv("TREASURY_API_HOST", cfg["host"])
         cfg["port"] = int(os.getenv("TREASURY_API_PORT", cfg["port"]))
         return cfg
 

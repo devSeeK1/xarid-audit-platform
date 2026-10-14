@@ -1,5 +1,7 @@
 # Xarid Audit Platform
 
+[![CI](https://github.com/devSeeK1/xarid-audit-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/devSeeK1/xarid-audit-platform/actions/workflows/ci.yml)
+
 **Davlat xaridlari audit-analitika platformasi.** Platforma turli davlat tizimlaridan ma'lumotlarni avtomatik yig'adi, tozalaydi, ma'lumotlar omboriga (DWH) yuklaydi va moliyaviy qonunbuzarlik belgilarini qoidalar asosida aniqlaydi.
 
 Loyiha davlat auditining tipik vazifasini yechadi: ma'lumot bir necha tizimda (xarid portali, soliq reyestri, g'aznachilik) turli formatda saqlanadi va ularni qo'lda solishtirish haftalab vaqt oladi. Platforma bu ishni **2,1 mln qator ma'lumot uchun taxminan 12 soniyada** bajaradi va auditorga tekshirish uchun tayyor ro'yxat beradi.
@@ -192,6 +194,40 @@ pytest -q
 ```
 
 To'liq jarayon testi kichik hajmdagi ma'lumotda butun pipeline'ni ishga tushiradi va har bir qoida ataylab qo'shilgan **barcha** anomaliyalarni topganini tekshiradi. Shuningdek, karantin ishlashi, silver va omborda ochiq PINFL yo'qligi, lineage nazorat yig'indilari, API autentifikatsiyasi va sahifalash, o'sib boruvchi yuklash ham tekshiriladi.
+
+---
+
+## Docker va CI/CD
+
+Butun platforma konteynerlarda bitta buyruq bilan ko'tariladi:
+
+```bash
+cp .env.example .env          # token va tuzni o'zgartiring
+docker compose up -d report   # yoki: make up
+# http://localhost:8080 — tayyor audit hisoboti
+```
+
+```mermaid
+flowchart LR
+    G[generate<br/>manba ma'lumotlari] -->|completed| A[api<br/>FastAPI · healthcheck]
+    A -->|healthy| P[pipeline<br/>ETL → DuckDB → audit]
+    P -->|completed| N[report<br/>nginx · read-only]
+```
+
+| Qism | Yechim |
+|---|---|
+| Image | Ikki bosqichli `Dockerfile`: bog'liqliklar alohida venv'da, runtime `python:3.13-slim`, root bo'lmagan `app` foydalanuvchi |
+| Orkestratsiya | `docker-compose.yml`: servislar `depends_on` shartlari bilan ketma-ket ishga tushadi (`service_completed_successfully`, `service_healthy`) |
+| Holat | Ma'lumot, hisobot va loglar nomlangan volume'larda. Hisobotni nginx faqat o'qish rejimida beradi, xavfsizlik sarlavhalari bilan |
+| Maxfiy ma'lumotlar | Token va tuz `.env` orqali uzatiladi, image ichiga tushmaydi (`.dockerignore`) |
+| Barqarorlik sinovi | `CHAOS_FAIL_RATE` bilan API tasodifiy 503 qaytaradi, pipeline retry orqali baribir yakunlanadi |
+
+**GitHub Actions** (`.github/workflows/ci.yml`) har bir push va pull request'da:
+
+1. `ruff` bilan lint va `pytest` bilan 34 ta test;
+2. Docker image'ni build qiladi (GitHub Actions cache bilan);
+3. **smoke test**: butun stekni `docker compose` bilan ko'taradi, 5% sun'iy API xatolari bilan pipeline'ni o'tkazadi va hisobot nginx orqali ochilishini tekshiradi;
+4. `main` branch'da image'ni **GitHub Container Registry**'ga (`ghcr.io`) `latest` va commit SHA teglari bilan yuklaydi.
 
 ---
 

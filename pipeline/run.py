@@ -20,7 +20,6 @@ from contextlib import contextmanager
 from datetime import datetime
 
 import httpx
-import polars as pl
 
 from pipeline.audit.engine import run_rules
 from pipeline.config import ROOT, Settings
